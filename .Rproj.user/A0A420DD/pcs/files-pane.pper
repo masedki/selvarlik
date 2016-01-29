@@ -1,0 +1,9 @@
+{
+    "path" : "~/recherche/amisbanana/pkg/selvarlik",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}
