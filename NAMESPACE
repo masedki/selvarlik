@@ -1,3 +1,7 @@
 exportPattern("^[[:alpha:]]+")
+
+#useDynLib(selvarlik)
+export(selvarlik)
 importFrom(Rcpp, evalCpp)
-useDynLib(selvarlik)
+importFrom(parallel, mclapply, detectCores)
+importFrom(mclust, Mclust, mclustBIC)
