@@ -1,29 +1,41 @@
-varsel <- function(order, x, nbcluster)
+varsel <- function(tmporder, x, nbcluster)
 {
+  S <- tmporder[1]
+  bicclust <- log(0)
+  bicclustj <- log(0)
+  tmp <- mixmodCluster(x[,S], nbCluster= nbcluster, models = mixmodGaussianModel(family = "diagonal"))
+  if(!tmp@error)
+     bicclust <- -tmp@bestResult@criterionValue
 
-j <- 1 ; S <- c(order[j])
-j <- j + 1
-bicclust <- Mclust(x[,order[j]],  G=nbcluster)$bic
-bicclustj <- Mclust(x[,c(S,order[j])],  G=nbcluster)$bic
-bicregj <- bic_j(order[j], x, S)
-bicregj <- sum(unlist(mclapply(X=as.list(setdiff(1:ncol(x), S)),
-                               FUN = bic_j,
-                               x=x,
-                               both = TRUE,
-                               discrim=discrim,
-                               mc.cores = min(length(setdiff(1:ncol(x), S)), detectCores(all.tests=FALSE, logical=FALSE)),
-                               mc.preschedule = TRUE,
-                               mc.cleanup = TRUE)))
+  tmp <- mixmodCluster(data.frame(x[,append(S,tmporder[2])]),  nbCluster= nbcluster, models = mixmodGaussianModel(family = "diagonal"))
+  if(!tmp@error)
+    bicclustj<- -tmp@bestResult@criterionValue
 
-while(bicclustj - (bicclust + bicregj))
-{
-  S <- c(S,order[j])
-  j <- j+1
-  bicclust <- Mclust(x[,order[1]],  G=nbcluster)$bic
-  bicclustj <- Mclust(x[,order[1:j]],  G=nbcluster)$bic
-  bicregj <-  bic_j(order[j], x, S)
+  bicregj <- bic_j(tmporder[2], x, S)
+#   bicregj <- sum(unlist(mclapply(X=as.list(setdiff(1:ncol(x), S)),
+#                                  FUN = bic_j,
+#                                  x=x,
+#                                  both = TRUE,
+#                                  discrim=discrim,
+#                                  mc.cores = min(length(setdiff(1:ncol(x), S)), detectCores(all.tests=FALSE, logical=FALSE)),
+#                                  mc.preschedule = TRUE,
+#                                  mc.cleanup = TRUE)))
+  j <- 2
+  while(bicclustj - (bicclust + bicregj) > 0)
+  {
+    S <- append(S,tmporder[j])
+    j <- j+1
+    bicclust <- log(0)
+    bicclustj <- log(0)
+    tmp <- mixmodCluster(data.frame(x[,S]), nbCluster= nbcluster, models = mixmodGaussianModel(family = "diagonal"))
+    if(class(tmp)!="try-error")
+      bicclust<- -tmp@bestResult@criterionValue
+    tmp <- mixmodCluster(data.frame(x[,append(S,tmporder[j])]),  nbCluster= nbcluster, models = mixmodGaussianModel(family = "diagonal"))
+    if(!tmp@error)
+      bicclustj<- -tmp@bestResult@criterionValue
 
+    bicregj <-  bic_j(tmporder[j], x, S)
 
-}
-return(list(S=S, O=setdiff(order, S)))
+  }
+  return(list(S=S, O=setdiff(order, S)))
 }
