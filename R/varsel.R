@@ -5,24 +5,20 @@ varsel <- function(tmporder, x, nbcluster)
   bicclustj <- log(0)
   tmp <- mixmodCluster(x[,S], nbCluster= nbcluster, models = mixmodGaussianModel(family = "diagonal"))
   if(!tmp@error)
-     bicclust <- -tmp@bestResult@criterionValue
+    bicclust <- -tmp@bestResult@criterionValue
 
   tmp <- mixmodCluster(data.frame(x[,append(S,tmporder[2])]),  nbCluster= nbcluster, models = mixmodGaussianModel(family = "diagonal"))
   if(!tmp@error)
     bicclustj<- -tmp@bestResult@criterionValue
 
-  bicregj <- bic_j(tmporder[2], x, S)
-#   bicregj <- sum(unlist(mclapply(X=as.list(setdiff(1:ncol(x), S)),
-#                                  FUN = bic_j,
-#                                  x=x,
-#                                  both = TRUE,
-#                                  discrim=discrim,
-#                                  mc.cores = min(length(setdiff(1:ncol(x), S)), detectCores(all.tests=FALSE, logical=FALSE)),
-#                                  mc.preschedule = TRUE,
-#                                  mc.cleanup = TRUE)))
+  bicregj <- -bic_j(tmporder[2], x, S)
   j <- 2
-  while(bicclustj - (bicclust + bicregj) > 0)
+  cp <- 0
+  while((j < ncol(x)) && (bicclustj - bicclust - bicregj > 0) || (cp <= 50))
   {
+    cp <- cp + 1
+    if(bicclustj - bicclust - bicregj > 0)
+      cp <- 0
     S <- append(S,tmporder[j])
     j <- j+1
     bicclust <- log(0)
@@ -34,8 +30,17 @@ varsel <- function(tmporder, x, nbcluster)
     if(!tmp@error)
       bicclustj<- -tmp@bestResult@criterionValue
 
-    bicregj <-  bic_j(tmporder[j], x, S)
+    bicregj <-  -bic_j(tmporder[j], x, S)
 
   }
-  return(list(S=S, O=setdiff(order, S)))
+  U <- setdiff(tmporder, S)
+  clustpart  <- mixmodCluster(data.frame(x[,S]), nbCluster= nbcluster, models = mixmodGaussianModel(family = "diagonal"))
+  bicreg  <- -sum(unlist(mclapply(X=as.list(setdiff(1:ncol(x), S)),
+                                 FUN = bic_j,
+                                 x=x,
+                                 mc.cores = min(length(setdiff(1:ncol(x), S)), detectCores(all.tests=FALSE, logical=FALSE)),
+                                 mc.preschedule = TRUE,
+                                 mc.cleanup = TRUE)))
+
+  return(list(S=S, U=U, clustpart= clustpart, bicreg=bicreg))
 }

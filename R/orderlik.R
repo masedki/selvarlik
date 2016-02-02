@@ -8,7 +8,7 @@ orderlik<- function(x, nbcluster, nbcores=detectCores(all.tests = FALSE, logical
     tmp <- mixmodCluster(x[,j], nbCluster = nbcluster)
     critval <- log(0)
     if(!tmp@error)
-       critval <- tmp@bestResult@likelihood
+       critval <- -tmp@bestResult@criterionValue
      return(critval)
   }
 
